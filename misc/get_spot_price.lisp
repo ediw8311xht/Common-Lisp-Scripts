@@ -8,7 +8,7 @@
 (require :yason)
 (defpackage :get-spot-price
   (:use :cl :my-utils :drakma :yason)
-  (:import-from :uiop #:getenv #:getenvp #:split-string)
+  (:import-from :uiop #:getenv #:getenvp)
   (:export #:main))
 
 (in-package :get-spot-price)
