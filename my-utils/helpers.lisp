@@ -1,13 +1,12 @@
-
 (in-package :my-utils)
 
 (defun split-by-char (str &key (split-char #\,))
-  (loop for c across str
+  (loop for c across (format nil "~a~c" str split-char)
         for i from 0
+        with s = 0
         when (char= c split-char)
-        return (list (subseq str 0 i) 
-                     (split-by-char (subseq str (+ 1 i))))
-        finally (return str)))
+          collect (subseq str s i)
+          and do (setf s (+ 1 i))))
 
 (defun substr-count (str sub &optional (len (length sub)) (pos (- (length str) len)))
   (if (> 0 pos)
@@ -27,3 +26,8 @@
             collect arg into args
             finally (return (values (apply #'format nil s args) rest-args)))))
 
+(defun assoc-val (symbol assoc-list &optional (doesnt-exist nil))
+  (let ((key-val (assoc symbol assoc-list)))
+    (if key-val
+        (cdr key-val)   
+        doesnt-exist)))
