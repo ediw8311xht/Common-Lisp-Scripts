@@ -28,6 +28,23 @@
 
 (defun assoc-val (symbol assoc-list &optional (doesnt-exist nil))
   (let ((key-val (assoc symbol assoc-list)))
-    (if key-val
-        (cdr key-val)   
-        doesnt-exist)))
+    (cond 
+      ((consp key-val) (cdr key-val))
+      (key-val key-val)
+      (t doesnt-exist))))
+
+(defun show-structure (var &key (level 1) (max-level 5) (indent-size 2)) 
+  (format t "~VT~S~%" (* level indent-size) (type-of var))
+
+  (let ((level (+ 1 level)))
+    (unless (< max-level level)
+      (typecase var
+        (hash-table (maphash (lambda (key val)
+                               (show-structure val :level level)) var))
+        (list   (fresh-line)
+                (loop for i in var 
+                      do (show-structure i :level level)))
+        (t nil)))))
+
+
+
