@@ -1,7 +1,8 @@
 
 (defpackage :my-utils
   (:use :cl)
-  (:export #:split-by-char
+  (:export #:gethash-init
+           #:split-by-char
            #:substr-count
            #:format-combine
            #:assoc-val
