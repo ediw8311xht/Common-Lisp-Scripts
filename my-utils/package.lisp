@@ -6,6 +6,9 @@
            #:substr-count
            #:format-combine
            #:assoc-val
-           #:show-structure))
+           #:show-structure
+           #:join
+           #:join-symbols
+           #:return-nil))
 
 

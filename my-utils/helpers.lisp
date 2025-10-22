@@ -58,5 +58,15 @@
                 do (show-structure i :level level)))
         (t nil)))))
 
+(defun join (sep &rest rest)
+  (with-output-to-string (output)
+    (format output "~A" (car rest))
+    (loop for i in (cdr rest)
+          do (format output "~A~A" sep i))))
 
+(defun join-symbols (sep &rest rest)
+  (intern (apply #'join sep rest)))
+
+(defun return-nil (&rest rest)
+  (declare (ignore rest)) nil)
 
