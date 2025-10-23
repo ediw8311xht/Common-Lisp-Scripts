@@ -1,14 +1,18 @@
 
 (defpackage :my-utils
   (:use :cl)
-  (:export #:gethash-init
-           #:split-by-char
-           #:substr-count
-           #:format-combine
-           #:assoc-val
-           #:show-structure
-           #:join
-           #:join-symbols
-           #:return-nil))
+  (:export
+    #:alistp
+    #:assoc-val
+    #:defstruct-with-helpers
+    #:format-combine
+    #:gethash-init
+    #:join
+    #:join-symbols
+    #:return-nil
+    #:show-structure
+    #:split-by-char
+    #:substr-count
+    ))
 
 
