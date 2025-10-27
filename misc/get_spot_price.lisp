@@ -7,8 +7,7 @@
 (require :uiop)
 (require :yason)
 (defpackage :get-spot-price
-  (:use :cl :my-utils :drakma :yason)
-  (:import-from :uiop #:getenv #:getenvp)
+  (:use :cl)
   (:export #:main))
 
 (in-package :get-spot-price)
@@ -28,20 +27,20 @@
 
 (defun stock-price (stock &key (api-key *api-ninja-key*))
   (gethash "price"
-           (convert-json 
-             (drakma:http-request *api-ninjas-url* 
-                                  :parameters `(("ticker" . ,stock)) 
+           (convert-json
+             (drakma:http-request *api-ninjas-url*
+                                  :parameters `(("ticker" . ,stock))
                                   :additional-headers `(("X-Api-Key" . ,api-key))))))
 
 (defun metal-spot-price (metal)
   (let ((url (gethash metal *metal-spot-urls*)))
     (unless url
       (error "Metal, ~A, not a valid metal." metal))
-    (second (my-utils:split-by-char 
+    (second (my-utils:split-by-char
               (car (convert-json (drakma:http-request url)))))))
 
 (defun handle (type query)
-  (cond 
+  (cond
     ((string-equal type "STOCK") (stock-price query))
     ((string-equal type "METAL") (metal-spot-price query))
     (t                           (error "Invalid argument, ~A" type))))

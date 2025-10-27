@@ -13,6 +13,7 @@
     #:show-structure
     #:split-by-char
     #:substr-count
+    #:subseq-after
     ))
 
 

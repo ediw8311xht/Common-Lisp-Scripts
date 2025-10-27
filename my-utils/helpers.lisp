@@ -1,7 +1,38 @@
 (in-package :my-utils)
 
+
+(defmacro defstruct-with-helpers (name &body slots)
+  "Creates structure with function structname-slot-find for each slot.
+
+  structname-slot-find: takes input list and struct returning tail of list of first matching
+  element on slot"
+  (labels ((make-helpers (slot-definition)
+             (multiple-value-bind (slot-name type)
+               (typecase slot-definition
+                 (atom (values slot-definition nil))
+                 (list (let ((plist
+                               (or (and (keywordp (second slot-definition)) (rest slot-definition))
+                                   ; when slot contains default value
+                                   (cddr slot-definition))))
+                         (values (first slot-definition) (getf plist :type)))))
+
+               (declare (ignorable type))
+               (let ((find-funcname (intern (format nil "~A-~A-FIND" name slot-name)))
+                     (find-accessor (intern (format nil "~A-~A" name slot-name))))
+
+                 `(defun ,find-funcname (input-list bookmark)
+                    (member (,find-accessor bookmark) input-list :test #'equalp :key #',find-accessor))))))
+    `(progn
+       (defstruct (,name)
+         ,@slots)
+
+       ,@(loop for slot in slots
+           collect (make-helpers slot)))))
+
 (defmacro gethash-init (key hash-table &body set-form
                         &aux (e-key (gensym)) (e-hash-table (gensym)))
+  "gets value at key in hash-table and sets it to value of `set-form` if it
+  doesn't already exist."
   `(let ((,e-key ,key) (,e-hash-table ,hash-table))
      (multiple-value-bind (value foundp)
        (gethash ,e-key ,e-hash-table)
@@ -76,30 +107,7 @@
            (alistp (rest alist)))
       t))
 
-(defmacro defstruct-with-helpers (name &body slots)
-  "Creates structure with function structname-slot-find for each slot.
+(defun subseq-after (str character &key (from-end nil)
+                         &aux (pos (position character str :from-end nil)))
+  (if pos (subseq str pos) ""))
 
-  structname-slot-find: takes input list and struct returning tail of list of first matching
-  element on slot"
-  (labels ((make-helpers (slot-definition)
-             (multiple-value-bind (slot-name type)
-               (typecase slot-definition
-                 (atom (values slot-definition nil))
-                 (list (let ((plist
-                               (or (and (keywordp (second slot-definition)) (rest slot-definition))
-                                   ; when slot contains default value
-                                   (cddr slot-definition))))
-                         (values (first slot-definition) (getf plist :type)))))
-
-               (declare (ignorable type))
-               (let ((find-funcname (intern (format nil "~A-~A-FIND" name slot-name)))
-                     (find-accessor (intern (format nil "~A-~A" name slot-name))))
-
-                 `(defun ,find-funcname (input-list bookmark)
-                    (member (,find-accessor bookmark) input-list :test #'equalp :key #',find-accessor))))))
-    `(progn
-       (defstruct (,name)
-         ,@slots)
-
-       ,@(loop for slot in slots
-           collect (make-helpers slot)))))

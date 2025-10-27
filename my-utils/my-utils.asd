@@ -1,8 +1,8 @@
 
 (asdf:defsystem #:my-utils
-  :description "Maximilian Ballard's Helper Functions"
+  :description "Utilities"
   :author "Maximilian Ballard"
-  :version "0.1.0"
+  :version "1.0"
   :serial t
   :components ((:file "package")
                (:file "helpers")))
