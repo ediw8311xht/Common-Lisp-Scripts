@@ -34,10 +34,10 @@
 
 (defun metal-spot-price (metal)
   (let ((url (gethash metal *metal-spot-urls*)))
-    (unless url
-      (error "Metal, ~A, not a valid metal." metal))
-    (second (my-utils:split-by-char
-              (car (convert-json (drakma:http-request url)))))))
+    (if url
+        (second (my-utils:split-by-char
+                  (car (convert-json (drakma:http-request url)))))
+        (error "Metal, ~A, not a valid metal." metal))))
 
 (defun handle (type query)
   (cond
@@ -47,7 +47,7 @@
 
 (defun main (args)
   (loop for (type query) on args by #'cddr
-        do (format t "~f" (handle type query))))
+        do (format t "~f~%" (handle type query))))
 
 (main (cdr sb-ext:*posix-argv*))
 

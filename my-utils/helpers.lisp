@@ -1,33 +1,80 @@
 (in-package :my-utils)
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun defstruct-option-parse (name-and-options)
+    (if (consp name-and-options)
+        (destructuring-bind (name . options) name-and-options
+          (values name
+                  (loop for (k v) on options
+                        when  (and (listp k) (keywordp (car k)))
+                        collect k
+                        when (keywordp k)
+                        collect `(,k ,v))))
+        (values name-and-options '()))))
 
-(defmacro defstruct-with-helpers (name &body slots)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun slot-name-type (slot-definition)
+    (typecase slot-definition
+      (atom (values slot-definition nil))
+      (list (let ((plist
+                    (or (and (keywordp (second slot-definition)) (rest slot-definition))
+                        ; when slot contains default value
+                        (cddr slot-definition))))
+              (values (first slot-definition) (getf plist :type)))))))
+
+(defmacro defstruct-with-helpers (name-and-options &body body)
   "Creates structure with function structname-slot-find for each slot.
 
   structname-slot-find: takes input list and struct returning tail of list of first matching
-  element on slot"
-  (labels ((make-helpers (slot-definition)
-             (multiple-value-bind (slot-name type)
-               (typecase slot-definition
-                 (atom (values slot-definition nil))
-                 (list (let ((plist
-                               (or (and (keywordp (second slot-definition)) (rest slot-definition))
-                                   ; when slot contains default value
-                                   (cddr slot-definition))))
-                         (values (first slot-definition) (getf plist :type)))))
+  element on slot
 
-               (declare (ignorable type))
-               (let ((find-funcname (intern (format nil "~A-~A-FIND" name slot-name)))
-                     (find-accessor (intern (format nil "~A-~A" name slot-name))))
+  Optionally takes :export argument to automatically export functions created
+  by defstruct and this macro"
+  (multiple-value-bind (name options) (defstruct-option-parse name-and-options)
+    (let* ((cname (or (second (assoc :conc-name options))
+                      (format nil "~A-" name)))
+           (to-export (second (assoc :export options)))
+           (constructor (assoc :constructor options))
+           (constructor-val (second constructor))
+           (find-defuns         '())
+           (symbols-to-export   '())
+           (n-options            (remove :export options :key #'car))
+           (n-name-and-options   (cons name n-options))
+           ; ignored for now, might have add parsing for this later
+           (docstring (when (stringp (car body))
+                        (car body)))
+           (slots (if docstring
+                      (cdr body)
+                      body)))
 
-                 `(defun ,find-funcname (input-list bookmark)
-                    (member (,find-accessor bookmark) input-list :test #'equalp :key #',find-accessor))))))
-    `(progn
-       (defstruct (,name)
-         ,@slots)
 
-       ,@(loop for slot in slots
-           collect (make-helpers slot)))))
+      (when to-export
+        (cond
+          ((and constructor constructor-val) (push constructor-val symbols-to-export))
+          ((not constructor) (push (intern (format nil "MAKE-~A" name)) symbols-to-export))
+          (t t)))
+
+      (dolist (slot slots)
+        (multiple-value-bind (slot-name type) (slot-name-type slot)
+          (let ((find-funcname (intern (format nil "~A~A-FIND" cname slot-name)))
+                (func-accessor (intern (format nil "~A~A" cname slot-name))))
+
+            (push
+              `(defun ,find-funcname (input-list bookmark)
+                 (member (,func-accessor bookmark) input-list :test #'equalp :key #',func-accessor))
+              find-defuns)
+            (when to-export
+              (push find-funcname symbols-to-export)
+              (push func-accessor symbols-to-export)))))
+      `(progn
+         (defstruct ,n-name-and-options
+           ,@body)
+         ,@(reverse find-defuns)
+
+         ,@(when to-export
+             `((export ',(reverse symbols-to-export))))))))
+
+
 
 (defmacro gethash-init (key hash-table &body set-form
                         &aux (e-key (gensym)) (e-hash-table (gensym)))
@@ -107,7 +154,8 @@
            (alistp (rest alist)))
       t))
 
-(defun subseq-after (str character &key (from-end nil)
-                         &aux (pos (position character str :from-end nil)))
-  (if pos (subseq str pos) ""))
+(defun subseq-after (str character &key (foundp nil) (from-end nil) (exclude-first nil))
+  (let* ((pos (position character str :from-end from-end))
+         (pos (if (and pos exclude-first) (+ pos 1) pos)))
+    (if pos (subseq str pos) foundp)))
 
