@@ -71,8 +71,8 @@
            ,@body)
          ,@(reverse find-defuns)
 
-         ,@(when to-export
-             `((export ',(reverse symbols-to-export))))))))
+         ,(when to-export
+             `(export ',(reverse symbols-to-export)))))))
 
 
 
