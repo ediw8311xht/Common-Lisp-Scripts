@@ -18,8 +18,7 @@
       (atom (values slot-definition nil))
       (list (let ((plist
                     (or (and (keywordp (second slot-definition)) (rest slot-definition))
-                        ; when slot contains default value
-                        (cddr slot-definition))))
+                        (cddr slot-definition)))) ; when slot contains default value
               (values (first slot-definition) (getf plist :type)))))))
 
 (defmacro defstruct-with-helpers (name-and-options &body body)
@@ -30,35 +29,37 @@
 
   Optionally takes :export argument to automatically export functions created
   by defstruct and this macro"
+
+
   (multiple-value-bind (name options) (defstruct-option-parse name-and-options)
-    (let* ((cname (or (second (assoc :conc-name options))
-                      (format nil "~A-" name)))
-           (to-export (second (assoc :export options)))
-           (constructor (assoc :constructor options))
-           (constructor-val (second constructor))
-           (find-defuns         '())
-           (symbols-to-export   '())
-           (n-options            (remove :export options :key #'car))
-           (n-name-and-options   (cons name n-options))
-           ; ignored for now, might have add parsing for this later
-           (docstring (when (stringp (car body))
-                        (car body)))
-           (slots (if docstring
-                      (cdr body)
-                      body)))
-
-
+    (let* ((find-defuns         '()) ; symbols created by this macro to be exported
+           (symbols-to-export   '()) ; symbols automatically created by defstruct to be exported
+           (cname               (or (second (assoc :conc-name options))
+                                    (format nil "~A-" name)))
+           (to-export           (second (assoc :export options)))
+           (predicate           (assoc :predicate options))
+           (predicate-val       (second predicate))
+           (constructor         (assoc :constructor options))
+           (constructor-val     (second constructor))
+           (n-options           (remove :export options :key #'car))
+           (n-name-and-options  (cons name n-options))
+           (docstring           (when (stringp (car body)) (car body))); ignored for now, might have add parsing for this later
+           (slots               (if docstring (cdr body) body)))
+      ;; adding constructor and predicate to export list (symbols-to-export)
       (when to-export
         (cond
           ((and constructor constructor-val) (push constructor-val symbols-to-export))
           ((not constructor) (push (intern (format nil "MAKE-~A" name)) symbols-to-export))
-          (t t)))
-
+          (t "(:constructor nil) tells defstruct not to define constructor"))
+        (cond
+          ((and predicate predicate-val) (push predicate-val symbols-to-export))
+          ((not predicate) (push (intern (format nil "~A-P" name)) symbols-to-export))
+          (t "(:predicate nil) tells defstruct not to define predicate")))
+      ;; create helper functions
       (dolist (slot slots)
         (multiple-value-bind (slot-name type) (slot-name-type slot)
           (let ((find-funcname (intern (format nil "~A~A-FIND" cname slot-name)))
                 (func-accessor (intern (format nil "~A~A" cname slot-name))))
-
             (push
               `(defun ,find-funcname (input-list bookmark)
                  (member (,func-accessor bookmark) input-list :test #'equalp :key #',func-accessor))
@@ -66,15 +67,11 @@
             (when to-export
               (push find-funcname symbols-to-export)
               (push func-accessor symbols-to-export)))))
+      ;; insert code
       `(progn
-         (defstruct ,n-name-and-options
-           ,@body)
+         (defstruct ,n-name-and-options ,@body)
          ,@(reverse find-defuns)
-
-         ,(when to-export
-             `(export ',(reverse symbols-to-export)))))))
-
-
+         ,(when to-export `(export ',(reverse symbols-to-export)))))))
 
 (defmacro gethash-init (key hash-table &body set-form
                         &aux (e-key (gensym)) (e-hash-table (gensym)))
