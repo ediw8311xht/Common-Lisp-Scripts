@@ -47,6 +47,7 @@
            (slots               (if docstring (cdr body) body)))
       ;; adding constructor and predicate to export list (symbols-to-export)
       (when to-export
+        (push name symbols-to-export)
         (cond
           ((and constructor constructor-val) (push constructor-val symbols-to-export))
           ((not constructor) (push (intern (format nil "MAKE-~A" name)) symbols-to-export))
@@ -74,15 +75,19 @@
          ,(when to-export `(export ',(reverse symbols-to-export)))))))
 
 (defmacro gethash-init (key hash-table &body set-form
-                        &aux (e-key (gensym)) (e-hash-table (gensym)))
-  "gets value at key in hash-table and sets it to value of `set-form` if it
+                        &aux (e-key   (gensym))
+                        (e-hash-table (gensym))
+                        (e-value      (gensym))
+                        (e-found      (gensym)))
+  "Gets value at key in hash-table and sets it to value of `set-form` if it
   doesn't already exist."
   `(let ((,e-key ,key) (,e-hash-table ,hash-table))
-     (multiple-value-bind (value foundp)
+     (multiple-value-bind (,e-value ,e-found)
        (gethash ,e-key ,e-hash-table)
-       (if foundp
-           value
-           (setf (gethash ,e-key ,e-hash-table) ,@set-form)))))
+       (if ,e-found
+           ,e-value
+           (setf (gethash ,e-key ,e-hash-table) 
+                 (progn ,@set-form))))))
 
 (defun split-by-char (str &key (split-char #\,))
   (loop for c across (format nil "~a~c" str split-char)
