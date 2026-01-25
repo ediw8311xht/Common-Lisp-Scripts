@@ -14,6 +14,9 @@
     #:split-by-char
     #:substr-count
     #:subseq-after
+    #:reduce-leaves
+    #:get-leaves
+    #:count-leaves
     ))
 
 

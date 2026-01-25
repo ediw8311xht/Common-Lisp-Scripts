@@ -86,7 +86,7 @@
        (gethash ,e-key ,e-hash-table)
        (if ,e-found
            ,e-value
-           (setf (gethash ,e-key ,e-hash-table) 
+           (setf (gethash ,e-key ,e-hash-table)
                  (progn ,@set-form))))))
 
 (defun split-by-char (str &key (split-char #\,))
@@ -138,6 +138,7 @@
                 do (show-structure i :level level)))
         (t nil)))))
 
+
 (defun join (sep &rest rest)
   (with-output-to-string (output)
     (format output "~A" (car rest))
@@ -161,3 +162,30 @@
          (pos (if (and pos exclude-first) (+ pos 1) pos)))
     (if pos (subseq str pos) foundp)))
 
+(defun reduce-leaves (func input-data &key (key #'identity))
+  "Returns list of atoms in data structure and nested data structures"
+  (labels
+    ((reduce-main (data)
+       (typecase data
+         (null
+           (funcall key nil))
+         (string
+           (funcall key data))
+         (vector
+           (reduce func data :key #'reduce-main))
+         (cons
+           (funcall func (reduce-main (car data))
+                    (reduce-main (cdr data))))
+         (hash-table
+           (loop for value being the hash-values of data
+                 for acc = (funcall func (reduce-main value))
+                 then      (funcall func acc (reduce-main value))
+                 finally (return acc)))
+         (t (funcall key data)))))
+    (reduce-main input-data)))
+
+(defun get-leaves (input-data)
+  (reduce-leaves #'append input-data :key #'(lambda (x) (when x (list x)))))
+
+(defun count-leaves (input-data)
+  (reduce-leaves #'+ input-data :key #'(lambda (x) (if x 1 0))))
