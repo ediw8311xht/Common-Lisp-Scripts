@@ -163,7 +163,7 @@
     (if pos (subseq str pos) foundp)))
 
 (defun reduce-leaves (func input-data &key (key #'identity))
-  "Returns list of atoms in data structure and nested data structures"
+  "Reduce but for atoms in data structure and nested data structures."
   (labels
     ((reduce-main (data)
        (typecase data
@@ -185,7 +185,9 @@
     (reduce-main input-data)))
 
 (defun get-leaves (input-data)
+  "Returns list of atoms in data structure and nested data structures."
   (reduce-leaves #'append input-data :key #'(lambda (x) (when x (list x)))))
 
 (defun count-leaves (input-data)
+  "Returns numbers of atoms in data structure and nested data structures."
   (reduce-leaves #'+ input-data :key #'(lambda (x) (if x 1 0))))
