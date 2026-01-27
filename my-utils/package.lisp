@@ -17,6 +17,6 @@
     #:reduce-leaves
     #:get-leaves
     #:count-leaves
-    ))
+    #:get-file-type))
 
 

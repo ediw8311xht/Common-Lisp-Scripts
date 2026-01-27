@@ -191,3 +191,9 @@
 (defun count-leaves (input-data)
   "Returns numbers of atoms in data structure and nested data structures."
   (reduce-leaves #'+ input-data :key #'(lambda (x) (if x 1 0))))
+
+(defun get-file-type (input-file)
+  (intern
+    (string-upcase (my-utils:subseq-after input-file #\. :from-end t :exclude-first 1))
+    "KEYWORD"))
+
