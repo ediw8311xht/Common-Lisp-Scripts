@@ -2,7 +2,7 @@
 
 (load "~/.sbclrc")
 
-(require :my-utils)
+(require :maximilian-utils)
 (require :drakma)
 (require :uiop)
 (require :yason)
@@ -35,7 +35,7 @@
 (defun metal-spot-price (metal)
   (let ((url (gethash metal *metal-spot-urls*)))
     (if url
-        (second (my-utils:split-by-char
+        (second (maximilian-utils:split-by-char
                   (car (convert-json (drakma:http-request url)))))
         (error "Metal, ~A, not a valid metal." metal))))
 

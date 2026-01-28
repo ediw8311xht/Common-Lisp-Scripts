@@ -1,3 +1,3 @@
 [submodule "common-lisp-utils"]
-	path = common-lisp-utils
-	url = https://github.com/ediw8311xht/common-lisp-utils.git
+	path = maximilian-utils
+	url = https://github.com/ediw8311xht/maximilian-utils.git
