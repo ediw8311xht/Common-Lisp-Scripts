@@ -26,18 +26,17 @@
   (yason:parse (convert-char-vec vec)))
 
 (defun stock-price (stock &key (api-key *api-ninja-key*))
-  (gethash "price"
-           (convert-json
-             (drakma:http-request *api-ninjas-url*
-                                  :parameters `(("ticker" . ,stock))
-                                  :additional-headers `(("X-Api-Key" . ,api-key))))))
+  (let ((json-data (drakma:http-request
+                     *api-ninjas-url*
+                     :parameters `(("ticker" . ,stock))
+                     :additional-headers `(("X-Api-Key" . ,api-key)))))
+
+    (when json-data (gethash "price" (convert-json json-data)))))
 
 (defun metal-spot-price (metal)
-  (let ((url (gethash metal *metal-spot-urls*)))
-    (if url
-        (second (maximilian-utils:split-by-char
-                  (car (convert-json (drakma:http-request url)))))
-        (error "Metal, ~A, not a valid metal." metal))))
+  (let* ((url (gethash metal *metal-spot-urls*))
+         (json-data (when url (car (convert-json (drakma:http-request url))))))
+    (when json-data (second (maximilian-utils:split-by-char json-data)))))
 
 (defun handle (type query)
   (cond
@@ -50,4 +49,3 @@
         do (format t "~f~%" (handle type query))))
 
 (main (cdr sb-ext:*posix-argv*))
-
