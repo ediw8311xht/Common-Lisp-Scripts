@@ -23,7 +23,9 @@
   (map 'string #'code-char vec))
 
 (defun convert-json (vec)
-  (yason:parse (convert-char-vec vec)))
+  (handler-case (yason:parse (convert-char-vec vec))
+    (error    ()          nil)
+    (no-error (parsed) parsed)))
 
 (defun stock-price (stock &key (api-key *api-ninja-key*))
   (let ((json-data (drakma:http-request
